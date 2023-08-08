@@ -1,10 +1,17 @@
+// add express as external module
 const express = require("express")
+// importing bcrypt
+var bcrypt = require('bcryptjs');
 // importing schema which we create in models folder
 const user = require("../models/user");
 // adding validator from external modules
 const { body, validationResult } = require('express-validator');
+// adding json web token as external module
+let  jwt = require('jsonwebtoken');
 // adding routes from external modules express
 const router = express.Router();
+// secret key for jws authentication 
+const secret_key = "araiz453zen12";
 // posting user to create a user
 router.post("/createuser", [
 // validate name which ensure that the lenght is not minimun than 3
@@ -30,6 +37,10 @@ router.post("/createuser", [
 // return bad request if the user already exist 
             return res.status(400).json({error: "User already exist"})
         }
+// salting password
+        let salt = await bcrypt.genSalt(10);
+// making password hash and await it 
+        let secPass = await bcrypt.hash(req.body.password, salt)
 // creating new document into the data base
         let User = await user.create({
 // making request of name
@@ -37,15 +48,27 @@ router.post("/createuser", [
 // email
             email: req.body.email,
 // & password
-            password: req.body.password
+            password: secPass
         })
+// making data object and use it in the jwt sign
+        const data = {
+// user object which is taking id of the user
+            user: {
+// id has been get from user.id
+                id: user.id
+            }
+        }
+// making jwt sign using data and secret key as a paramether 
+        const authToken = jwt.sign(data, secret_key);
+// loggin token into the console
+        console.log(authToken);
 // sending response to back
-        res.json(User)
+        res.json({authToken})
 // catching error
     }catch(err){
-        // loging error's message
+// loging error's message
         console.error(err.message);
-        // returning back bad request status
+// returning back bad request status
         res.status(500).send("Some error occur")
     }
 })
