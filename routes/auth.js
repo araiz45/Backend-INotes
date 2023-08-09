@@ -8,11 +8,14 @@ const user = require("../models/user");
 const { body, validationResult } = require("express-validator");
 // adding json web token as external module
 let jwt = require("jsonwebtoken");
+
+const fetchUser = require("../middlewares/fetchUser");
+const { useId } = require("react");
 // adding routes from external modules express
 const router = express.Router();
 // secret key for jws authentication
 const secret_key = "araiz453zen12";
-// posting user to create a user
+// ROUTE # 1 : posting user to create a user
 router.post(
   "/createuser",
   [
@@ -76,7 +79,7 @@ router.post(
     }
   }
 );
-// creating login authentication
+//  ROUTE # 3 : creating login authentication
 router.post(
   "/login",
   [
@@ -99,6 +102,7 @@ router.post(
     try {
       // finding and getting into userFinding using email
       let usersFinding = await user.findOne({email: email});
+    //   console.log(usersFinding)
       // if their is not of user execute this block
       if (!usersFinding) {
         // return with bad request and say user does not exist as json
@@ -120,9 +124,11 @@ router.post(
         // user object which is taking id of the user
         user: {
           // id has been get from user.id
-          id: await user.id,
+          id: await usersFinding.id,
+
         },
       };
+      console.log(payload)
       // making jwt sign using data and secret key as a paramether
       const authToken = jwt.sign(payload, secret_key);
       // sending response to back
@@ -135,5 +141,21 @@ router.post(
     }
   }
 );
+// ROUTE # 3: 
+router.post(
+    "/getuser", fetchUser,async (req, res) => {
+      try {
+        let userIds = req.user.id;
+        const userFind = await user.findById(userIds).select("-password")
+        // const userFind = await user.findById({id: userIds}).select("-password")
+        res.json({users : userFind})
+      } catch (error) {
+        // loging error's message
+        console.error(error.message);
+        // returning back bad request status
+        res.status(500).send("Internal server error fro get user");
+      }
+    })
+
 // exporting modules
 module.exports = router;
