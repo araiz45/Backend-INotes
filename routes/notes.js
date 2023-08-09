@@ -43,6 +43,28 @@ router.post("/addnotes", fetchUser , [
    
    
 })
-
+router.put("/updatenotes/:id", fetchUser ,async (req, res) =>{
+    const {title, description, tag} = req.body;
+    const newNotes = {};
+    if(title){
+        newNotes.title = title;
+    }
+    if(description){
+        newNotes.description = description;
+    }
+    if(tag){
+        newNotes.tag = tag;
+    }
+    let note = await Notes.findById(req.params.id);
+    console.log(note)
+    if(!note){
+        res.status(404).send("Not found")
+    }
+    if(note.user.toString() !== req.user.id){
+        return res.status(401).send("not allowed");
+    }
+    note = await Notes.findByIdAndUpdate(req.params.id, {$set: newNotes}, {new: true},)
+    res.json({note});
+})
 
 module.exports = router;
