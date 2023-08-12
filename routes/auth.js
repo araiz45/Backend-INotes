@@ -90,11 +90,13 @@ router.post(
     // making a asynchronous program for ensure than we can await values
   ],
   async (req, res) => {
+    let success
     const errors = validationResult(req);
     // this line ensure there no error in above validator and post request obey the above code
     if (!errors.isEmpty()) {
+      success = false
       // retrun if there is an error, the request is return an array of json of error and 400 bad request
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ success, errors: errors.array() });
     }
     // destucturing of req.body
     const {email, password} = req.body;
@@ -105,19 +107,21 @@ router.post(
     //   console.log(usersFinding)
       // if their is not of user execute this block
       if (!usersFinding) {
+        success = false
         // return with bad request and say user does not exist as json
         return res
           .status(400)
-          .json({ error: "Login using correct credentials" });
+          .json({ success, error: "Login using correct credentials" });
       }
       // bcrypt compare get two arguments given password and hash of the password and return true or false
       const passwordCompare = await bcrypt.compare(password, usersFinding.password);
       // if password is mismatch then this block of code will execute
       if (!passwordCompare) {
         // we don't want to share that user or password is incorrect
+        success = false
         return res
           .status(400)
-          .json({ error: "Login using correct credentials" });
+          .json({ success, error: "Login using correct credentials" });
       }
       // making data object and use it in the jwt sign
       const payload = {
@@ -132,7 +136,8 @@ router.post(
       // making jwt sign using data and secret key as a paramether
       const authToken = jwt.sign(payload, secret_key);
       // sending response to back
-      res.json({ authToken });
+      success = true
+      res.json({ success, authToken });
     } catch (error) {
       // loging error's message
       console.error(error.message);
